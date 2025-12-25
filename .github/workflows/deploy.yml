@@ -1,0 +1,53 @@
+# Build and deploy JARs to GitHub Releases
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v0.12.0
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Grant Execute Permission for gradlew
+        run: chmod +x gradlew
+      
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'zulu'
+          cache: gradle
+      
+      - name: Build with Gradle
+        run: ./gradlew build --no-daemon
+      
+      - name: Get version from gradle.properties
+        id: get_version
+        run: |
+          VERSION=$(grep "mod_version" gradle.properties | cut -d'=' -f2 | xargs)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+      
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            build/libs/forgewurst-${{ steps.get_version.outputs.version }}.jar
+            build/libs/forgewurst-${{ steps.get_version.outputs.version }}-sources.jar
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
