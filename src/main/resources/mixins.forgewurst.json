@@ -1,0 +1,17 @@
+{
+	"package": "net.wurstclient.forge.mixins",
+	"required": true,
+	"refmap": "mixins.forgewurst.refmap.json",
+	"target": "@env(DEFAULT)",
+	"minVersion": "0.8.5",
+	"compatibilityLevel": "JAVA_8",
+	"mixins": [],
+	"server": [],
+	"client": [
+		"BlockCactusMixin",
+		"BlockWebMixin",
+		"EntityPlayerSPMixin",
+		"EntityRendererMixin",
+		"PlayerControllerMPMixin"
+	]
+}

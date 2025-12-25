@@ -1,61 +1,53 @@
-# A deployment template that works out of the box
-# It supports these objectives:
-# - Deploy to Maven (Build Job) [Secrets: MAVEN_USER, MAVEN_PASS]
-# - Deploy to CurseForge (Upload Job) [Secrets: CURSEFORGE_TOKEN]
-# - Deploy to Modrinth (Upload Job) [Secrets: MODRINTH_TOKEN]
-
-name: Deploy
+# Build and deploy JARs to GitHub Releases
+name: Build and Release
 
 on:
   push:
     tags:
-      - '[0-9]+.[0-9]+.[0-9]+'
+      - 'v*.*.*'  # Triggers on version tags like v0.12.0
+  release:
+    types: [created]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+    
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
-
+        uses: actions/checkout@v4
+      
       - name: Grant Execute Permission for gradlew
         run: chmod +x gradlew
-
-      - name: Read gradle.properties
-        uses: BrycensRanch/read-properties-action@v1
-        id: properties
-        with:
-          file: gradle.properties
-          all: true
-
+      
       - name: Setup Java
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '25'
           distribution: 'zulu'
           cache: gradle
-
-      - name: Publish to Maven
-        if: steps.properties.outputs.publish_to_maven == 'true' && steps.properties.outputs.publish_to_local_maven == 'true'
-        uses: gradle/gradle-build-action@v2
+      
+      - name: Build with Gradle
+        run: ./gradlew build --no-daemon
+      
+      - name: Get version from gradle.properties
+        id: get_version
+        run: |
+          VERSION=$(grep "mod_version" gradle.properties | cut -d'=' -f2 | xargs)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+      
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          arguments: |
-            publish
-            -P${{ steps.properties.outputs.maven_name }}Username=${{ secrets.MAVEN_USER }}
-            -P${{ steps.properties.outputs.maven_name }}Password=${{ secrets.MAVEN_PASS }}
-
-      - name: Publish to CurseForge
-        if: steps.properties.outputs.publish_to_curseforge == 'true'
-        uses: gradle/gradle-build-action@v2
+          files: |
+            build/libs/forgewurst-${{ steps.get_version.outputs.version }}.jar
+            build/libs/forgewurst-${{ steps.get_version.outputs.version }}-sources.jar
+          draft: false
+          prerelease: false
+          generate_release_notes: true
         env:
-          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
-        with:
-          arguments: curseforge
-
-      - name: Publish to Modrinth
-        if: steps.properties.outputs.publish_to_modrinth == 'true'
-        uses: gradle/gradle-build-action@v2
-        env:
-          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
-        with:
-          arguments: modrinth
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
