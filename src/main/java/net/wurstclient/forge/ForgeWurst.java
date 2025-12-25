@@ -46,6 +46,7 @@ public final class ForgeWurst
 	private IngameHUD hud;
 	private CommandProcessor cmdProcessor;
 	private KeybindProcessor keybindProcessor;
+	private ClickGuiKeybind clickGuiKeybind;
 	private WurstUpdater updater;
 	
 	@EventHandler
@@ -91,6 +92,10 @@ public final class ForgeWurst
 		
 		keybindProcessor = new KeybindProcessor(hax, keybinds, cmdProcessor);
 		MinecraftForge.EVENT_BUS.register(keybindProcessor);
+		
+		clickGuiKeybind = new ClickGuiKeybind(this);
+		clickGuiKeybind.register();
+		MinecraftForge.EVENT_BUS.register(clickGuiKeybind);
 		
 		updater = new WurstUpdater();
 		MinecraftForge.EVENT_BUS.register(updater);
