@@ -144,12 +144,16 @@ public final class ItemEspHack extends Hack
 			if(names.isChecked())
 			{
 				ItemStack stack = WItem.getItemStack(e);
-				EntityRenderer.drawNameplate(WMinecraft.getFontRenderer(),
-					WItem.getStackSize(stack) + "x " + stack.getDisplayName(),
-					0, 1, 0, 0, mc.getRenderManager().playerViewY,
-					mc.getRenderManager().playerViewX,
-					mc.getRenderManager().options.thirdPersonView == 2, false);
-				GL11.glDisable(GL11.GL_LIGHTING);
+				if(stack != null && mc.getRenderManager() != null 
+					&& mc.getRenderManager().options != null)
+				{
+					EntityRenderer.drawNameplate(WMinecraft.getFontRenderer(),
+						WItem.getStackSize(stack) + "x " + stack.getDisplayName(),
+						0, 1, 0, 0, mc.getRenderManager().playerViewY,
+						mc.getRenderManager().playerViewX,
+						mc.getRenderManager().options.thirdPersonView == 2, false);
+					GL11.glDisable(GL11.GL_LIGHTING);
+				}
 			}
 			
 			GL11.glPopMatrix();
